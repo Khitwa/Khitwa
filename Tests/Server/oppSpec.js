@@ -20,16 +20,17 @@ describe('Opportunity Test DataBase', function (done) {
 	Organization.collection.drop();
 	Opportunity.collection.drop();
 
+	var newOrg = new Organization({
+		'name':'KhitwaOrg',
+		'password':'1234',
+		'cause_area':'volunteering',
+		'locations':'Canada',
+		'missionStatement':'A step in the right direction',
+		'contactInfo':'Khitwa@khitwa.org'
+	})
+	newOrg.save();
+
 	beforeEach(function (done) {
-		var newOrg = new Organization({
-			'name':'KhitwaOrg',
-			'password':'1234',
-			'cause_area':'volunteering',
-			'locations':'Canada',
-			'missionStatement':'A step in the right direction',
-			'contactInfo':'Khitwa@khitwa.org'
-		})
-		newOrg.save();
 		var newOpp = new Opportunity({
 			"title":"AHR",
 			"_organizer":"KhitwaOrg",
@@ -45,7 +46,6 @@ describe('Opportunity Test DataBase', function (done) {
 	});
 
 	afterEach(function (done) {
-		Organization.collection.drop();
 		Opportunity.collection.drop();
 		done();
 	});
