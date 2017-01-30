@@ -25,7 +25,7 @@ Organization.comparePassword = function(candidatePassword, savedPassword, res, c
   bcrypt.compare( candidatePassword, savedPassword, function(err, isMatch){
     if(!isMatch){
       res.status(500).send('Wrong Password');
-    } else if(isMatch){
+    } else if(cb){
       cb(isMatch);
     }
   });
