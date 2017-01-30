@@ -120,7 +120,6 @@ describe('Organization Test Database', function (done) {
 					'password' : '1234'
 				})
 				.end(function (error, res) {
-					console.log(res.body);
 					expect(res.body.token).to.not.equal(undefined);
 					expect(res.body.name).to.be.equal('Khitwa');
 					done();
@@ -252,7 +251,7 @@ describe('Organization Test Database', function (done) {
 				});
 		});
 
-		xit('Should return 201 Updated when passed oldPassword', function (done) {
+		it('Should return 201 Updated when passed oldPassword', function (done) {
 			chai.request(server)
 				.post('/api/organization/edit')
 				.set('x-access-token', token)
@@ -352,7 +351,7 @@ describe('Organization Test Database', function (done) {
 
 		it('Should return ERROR 500 Opportunity Not Found if the id is incorrect',function (done) {
 			chai.request(server)
-				.post('/api/organization/closeOpportunity/581a85af49be4b14f4c45555')
+				.post('/api/organization/closeOpportunity/581a85af49be4b14f4cMIHYAR')
 				.set('x-access-token', token)
 				.end(function (error, res) {
 					expect(res.status).to.be.equal(500);

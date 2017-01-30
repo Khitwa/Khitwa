@@ -40,7 +40,7 @@ User.comparePassword = function(candidatePassword, savedPassword, res, cb){
   bcrypt.compare( candidatePassword, savedPassword, function(err, isMatch){
     if(!isMatch){
       res.status(500).send('Wrong Password');
-    } else if(isMatch){
+    } else if(cb){
       cb(isMatch);
     }
   });
