@@ -103,17 +103,28 @@ describe('Organization Test Database', function (done) {
 		});
 
 		it('Should give access token when signin',function (done) {
+			var newOrg2 = new Organization({
+				'name':'Khitwa',
+				'password':'1234',
+				'cause_area':'volunteering',
+				'locations':'Canada',
+				'missionStatement':'A step in the right direction',
+				'contactInfo':'Khitwa@khitwa.org'
+			})
+			newOrg2.save(function (error, saved) {
+				
 			chai.request(server)
 				.post('/api/organization/signin')
 				.send({
-					'name':'KhitwaOrg',
+					'name':'Khitwa',
 					'password' : '1234'
 				})
 				.end(function (error, res) {
 					expect(res.body.token).to.not.equal(undefined);
-					expect(res.body.name).to.be.equal('KhitwaOrg');
+					expect(res.body.name).to.be.equal('Khitwa');
 					done();
 				});
+			});
 		});
 	});
 

@@ -17,7 +17,6 @@ var opportunityController = require('../../server/opportunities/opportunityContr
 
 describe('Opportunity Test DataBase', function (done) {
 	
-	// Organization.collection.drop();
 	Opportunity.collection.drop();
 
 	var newOrg = new Organization({
