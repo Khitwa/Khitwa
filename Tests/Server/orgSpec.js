@@ -120,6 +120,7 @@ describe('Organization Test Database', function (done) {
 					'password' : '1234'
 				})
 				.end(function (error, res) {
+					console.log(res.body);
 					expect(res.body.token).to.not.equal(undefined);
 					expect(res.body.name).to.be.equal('Khitwa');
 					done();
