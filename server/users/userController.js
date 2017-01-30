@@ -18,6 +18,8 @@ module.exports = {
 						var token = jwt.encode(user, 'secret');
 						res.setHeader('x-access-token', token);
 						res.json({token : token, username: user.username});
+					}else{
+						helpers.errorHandler('Wrong Password', req, res);
 					}
 				});
 			}else {
@@ -137,11 +139,15 @@ module.exports = {
 					user.causes = req.body.causes || user.causes;
 					user.picture = req.body.picture || user.picture;
 					if(req.body.oldPassword){
-							User.comparePassword(req.body.oldPassword , user.password , res , function(){
+							User.comparePassword(req.body.oldPassword , user.password , res , function(found){
+								if (found) {
 									user.password = req.body.password;
 									user.save(function(error, saved){
 										res.status(201).send('Updated');
 									});
+								} else {
+									helpers.errorHandler('Wrong Password', req, res);
+								}
 							});
 						}
 

@@ -36,16 +36,6 @@ var UserSchema = new Schema({
 
 var User = mongoose.model('User' , UserSchema);
 
-User.comparePassword = function(candidatePassword, savedPassword, res, cb){
-  bcrypt.compare( candidatePassword, savedPassword, function(err, isMatch){
-    if(!isMatch){
-      res.status(500).send('Wrong Password');
-    } else if(cb){
-      cb(isMatch);
-    }
-  });
-};
-
 
 UserSchema.pre('save', function (next) {
   var user = this;
@@ -74,5 +64,15 @@ UserSchema.pre('save', function (next) {
     });
   });
 });
+
+User.comparePassword = function(candidatePassword, savedPassword, res, cb){
+  bcrypt.compare( candidatePassword, savedPassword, function(err, isMatch){
+    if(err){
+      res.status(500).send('Wrong Password');
+    } else if(cb){
+      cb(isMatch);
+    }
+  });
+};
 
 module.exports = User;
