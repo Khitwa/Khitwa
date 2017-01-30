@@ -102,7 +102,7 @@ describe('Organization Test Database', function (done) {
 				});
 		});
 
-		xit('Should give access token when signin',function (done) {
+		it('Should give access token when signin',function (done) {
 			chai.request(server)
 				.post('/api/organization/signin')
 				.send({
