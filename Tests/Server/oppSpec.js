@@ -12,8 +12,6 @@ var Organization = require('../../server/organizations/organizationModel');
 var organizationController = require('../../server/organizations/organizationController');
 var Opportunity = require('../../server/opportunities/opportunityModel');
 var opportunityController = require('../../server/opportunities/opportunityController');
-// var Opening = require('../../server/openings/openingModel');
-// var openingController = require('../../server/openings/openingController');
 
 describe('Opportunity Test DataBase', function (done) {
 	
@@ -59,7 +57,7 @@ describe('Opportunity Test DataBase', function (done) {
 
 		it('Should return an array of organization', function (done) {
 			chai.request(server)
-				.get('/api/opportunities/getall')
+				.get('/api/opportunity/getall')
 				.end(function (error, res) {
 					expect(Array.isArray(res.body)).to.be.equal(true);
 					expect(res.body.length).to.be.equal(1);
@@ -69,16 +67,16 @@ describe('Opportunity Test DataBase', function (done) {
 		});
 	});
 
-	describe('Add Opening', function (done) {
-
-		it('Should have a method called addOpening', function (done) {
-			expect(typeof opportunityController.addOpening).to.be.equal('function');
+	describe('Add Opportunity', function (done) {
+		
+		it('Should have a method called addOpportunity', function (done) {
+			expect(typeof opportunityController.addOpportunity).to.be.equal('function');
 			done();
 		});
-		
-		it('Should return ERROR 500 if you not signed in', function (done) {
+
+		it('Should return ERROR 500 No Token if not signed in', function (done) {
 			chai.request(server)
-				.post('/api/opportunities/addOpening/something')
+				.post('/api/opportunity/addOpportunity')
 				.end(function (error, res) {
 					expect(res.status).to.be.equal(500);
 					expect(res.text).to.be.equal('No Token');
@@ -86,40 +84,22 @@ describe('Opportunity Test DataBase', function (done) {
 				});
 		});
 
-		it('Should return ERROR 500 Opportunity Not Found if the id is incorrect', function (done) {
+		it('Should create Opportunity', function (done) {
 			chai.request(server)
-				.post('/api/opportunities/addOpening/somethingnotright')
-				.set('x-access-token',token)
+				.post('/api/opportunity/addOpportunity')
+				.set('x-access-token', token)
+				.send({
+					"title":"AHR",
+					"startDate":"25-NOV-2016",
+					"endDate":"26-NOV-2016",
+					"location":"Halifax",
+					"causesArea":"Education",
+					"description":"Education changes the world!"
+				})
 				.end(function (error, res) {
-					expect(res.status).to.be.equal(500);
-					expect(res.text).to.be.equal('Opportunity Not Found');
+					expect(res.status).to.be.equal(201);
+					expect(res.text).to.be.equal('Opportunity Created');
 					done();
-				});
-		});
-
-		it('Should add new opening', function (done) {
-			chai.request(server)
-				.get('/api/opportunities/getall')
-				.end(function (error, res) {
-					var id = res.body[0]._id;
-
-					chai.request(server)
-						.post('/api/opportunities/addOpening/'+id)
-						.set('x-access-token',token)
-						.send({
-							"title":"First Opening",
-							"numberOfVolunteers":12,
-							"location":"Jordan",
-							"description":"This is the first opening in this website",
-							"skillsRequired":"English",
-							"resources":"buses",
-							"status":"Active"
-						})
-						.end(function (error, res) {
-							expect(res.status).to.be.equal(201);
-							expect(res.text).to.be.equal('Opening Added');
-							done();
-						});
 				});
 		});
 	});
@@ -154,7 +134,7 @@ describe('Opportunity Test DataBase', function (done) {
 
 		it('Should be able to modify an opportunity', function (done) {
 			chai.request(server)
-				.get('/api/opportunities/getall')
+				.get('/api/opportunity/getall')
 				.end(function (error, res) {
 					var id = res.body[0]._id;
 
@@ -250,7 +230,7 @@ describe('Opportunity Test DataBase', function (done) {
 
 		it('Should return an opportunity', function (done) {
 			chai.request(server)
-				.get('/api/opportunities/getall')
+				.get('/api/opportunity/getall')
 				.end(function (error, res) {
 					var id = res.body[0]._id;
 
@@ -265,6 +245,130 @@ describe('Opportunity Test DataBase', function (done) {
 		});
 	});
 
+	describe('Close Opportunity', function (done) {
+		
+		it('Should have a method called closeOpportunity', function (done) {
+			expect(typeof opportunityController.closeOpportunity).to.be.equal('function');
+			done();
+		});
+
+		it('Should return ERROR 500 No Token if not signed in', function (done) {
+			chai.request(server)
+				.post('/api/opportunity/closeOpportunity/581a85af49be4b14f4c45555')
+				.end(function (error, res) {
+					expect(res.status).to.be.equal(500);
+					expect(res.text).to.be.equal('No Token');
+					done();
+				});
+		});
+
+		it('Should return ERROR 500 Opportunity Not Found if the id is incorrect',function (done) {
+			chai.request(server)
+				.post('/api/opportunity/closeOpportunity/something')
+				.set('x-access-token', token)
+				.end(function (error, res) {
+					expect(res.status).to.be.equal(500);
+					expect(res.text).to.be.equal('Opportunity Not Found');
+					done();
+				});
+		});
+
+		it('Should Close Opportunity', function (done) {
+			chai.request(server)
+				.post('/api/opportunity/addOpportunity')
+				.set('x-access-token', token)
+				.send({
+					"title":"AHR",
+					"startDate":"25-NOV-2016",
+					"endDate":"26-NOV-2016",
+					"location":"Halifax",
+					"causesArea":"Education",
+					"description":"Education changes the world!"
+				})
+				.end(function (error, res) {
+					chai.request(server)
+						.get('/api/organization/getByName/KhitwaOrg')
+						.end(function (error, res) {
+							var id = res.body.currentOpportunities[0];
+							
+							chai.request(server)
+								.post('/api/opportunity/closeOpportunity/'+id)
+								.set('x-access-token', token)
+								.end(function (error, res) {
+									expect(res.status).to.be.equal(201);
+									expect(res.text).to.be.equal('Opportunity Closed');
+									done();
+								});
+						});
+				});
+		});
+	});
+
+	describe('Reopen Opportunity', function (done) {
+		
+		it('Should have a method called reopenOpportunity', function (done) {
+			expect(typeof opportunityController.reopenOpportunity).to.be.equal('function');
+			done();
+		});
+
+		it('Should return ERROR 500 No Token when not signed in', function (done) {
+			chai.request(server)
+				.post('/api/opportunity/reopenOpportunity/something')
+				.end(function (error, res) {
+					expect(res.status).to.be.equal(500);
+					expect(res.text).to.be.equal('No Token');
+					done();
+				});
+		});
+
+		it('Should return ERROR 500 Opportunity Not Found if the id is incorrect', function (done) {
+			chai.request(server)
+				.post('/api/opportunity/reopenOpportunity/something')
+				.set('x-access-token', token)
+				.end(function (error, res) {
+					expect(res.status).to.be.equal(500);
+					expect(res.text).to.be.equal('Opportunity Not Found');
+					done();
+				});
+		});
+
+		it('Should Reopen closed Opportunity', function (done) {
+			chai.request(server)
+				.post('/api/opportunity/addOpportunity')
+				.set('x-access-token', token)
+				.send({
+					"title":"AHR",
+					"startDate":"25-NOV-2016",
+					"endDate":"26-NOV-2016",
+					"location":"Halifax",
+					"causesArea":"Education",
+					"description":"Education changes the world!"
+				})
+				.end(function (error, res) {
+					chai.request(server)
+						.get('/api/organization/getByName/KhitwaOrg')
+						.end(function (error, res) {
+							var id = res.body.currentOpportunities[0];
+							
+							chai.request(server)
+								.post('/api/opportunity/closeOpportunity/'+id)
+								.set('x-access-token', token)
+								.end(function (error, res) {
+
+									chai.request(server)
+										.post('/api/opportunity/reopenOpportunity/'+id)
+										.set('x-access-token', token)
+										.end(function (error, res) {
+											expect(res.status).to.be.equal(201);
+											expect(res.text).to.be.equal('Opportunity Reopened');
+											done();
+										});
+								});
+						});
+				});
+		});
+	});
+
 	describe('Get Opportunity By Organization ID', function (done) {
 		
 		it('Should have a method called getOpportunityByOrgId', function (done) {
@@ -274,7 +378,7 @@ describe('Opportunity Test DataBase', function (done) {
 
 		it('Should return ERROR 500 Opportunity Not Found if id is incorrect', function (done) {
 			chai.request(server)
-				.get('/api/opportunities/organization/somethingnotright')
+				.get('/api/opportunity/organization/somethingnotright')
 				.end(function (error, res) {
 					expect(res.status).to.be.equal(500);
 					expect(res.text).to.be.equal('Opportunity Not Found');
@@ -284,7 +388,7 @@ describe('Opportunity Test DataBase', function (done) {
 
 		it('Should return Opportunity', function (done) {
 			chai.request(server)
-				.get('/api/opportunities/organization/KhitwaOrg')
+				.get('/api/opportunity/organization/KhitwaOrg')
 				.end(function (error, res) {
 					expect(res.status).to.be.equal(200);
 					expect(res.body[0]._organizer).to.be.equal('KhitwaOrg');
@@ -323,7 +427,7 @@ describe('Opportunity Test DataBase', function (done) {
 
 		it('Should delete it if it was in past opportunities', function (done) {
 			chai.request(server)
-				.post('/api/organization/addOpportunity')
+				.post('/api/opportunity/addOpportunity')
 				.set('x-access-token', token)
 				.send({
 					"title":"AHR",
@@ -340,7 +444,7 @@ describe('Opportunity Test DataBase', function (done) {
 							var id = res.body.currentOpportunities[0];
 							
 							chai.request(server)
-								.post('/api/organization/closeOpportunity/'+id)
+								.post('/api/opportunity/closeOpportunity/'+id)
 								.set('x-access-token', token)
 								.end(function (error, res) {
 									chai.request(server)
@@ -358,7 +462,7 @@ describe('Opportunity Test DataBase', function (done) {
 
 		it('Should delete an opportunity', function (done) {
 			chai.request(server)
-				.post('/api/organization/addOpportunity')
+				.post('/api/opportunity/addOpportunity')
 				.set('x-access-token', token)
 				.send({
 					"title":"AHR",

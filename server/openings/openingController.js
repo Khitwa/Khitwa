@@ -9,6 +9,46 @@ var jwt = require('jwt-simple');
 
 module.exports = {
 
+  addOpening: function (req, res) {
+
+    var token = req.headers['x-access-token'];
+    if (!token) {
+      helpers.errorHandler('No Token', req, res);
+    } else {
+
+      var opportunityId = req.params.id.toString();
+      var newOpening = new Opening({
+        title : req.body.title,
+        _opportunity : opportunityId,
+        numberOfVolunteers : req.body.numberOfVolunteers,
+        location : req.body.location,
+        description : req.body.description,
+        skillsRequired : req.body.skillsRequired,
+        resources : req.body.resources,
+        status : req.body.status
+      })
+
+      Opportunity.findOne({_id : opportunityId})
+      .exec(function (error, opportunity) {
+        if (opportunity) {
+            newOpening.save(function (error, saved) {
+            if (saved) {
+
+              opportunity.currOpenings.push(saved._id);
+              opportunity.save(function (error, oppSaved) {
+                if (oppSaved) {
+                  res.status(201).send('Opening Added');
+                }
+              })
+            }
+          })
+        }else{
+          helpers.errorHandler('Opportunity Not Found', req, res);
+        }
+      })
+    }
+  },
+
 	allOpenings : function (req, res) {
 
     Opening.find({})
@@ -289,5 +329,51 @@ module.exports = {
         helpers.errorHandler('Opening Not Found', req, res);
       }
     })
+  }, 
+  reopenOpening : function (req, res) {
+    var token = req.headers['x-access-token'];
+    var id = req.params.id.toString();
+
+    if (!token) {
+      helpers.errorHandler('No Token', req, res);
+    } else {
+
+      Opening.findOne({_id : id})
+      .exec(function (error, opening) {
+        if (opening) {
+          var opportunityId = opening._opportunity;
+          opening.status= 'Active';
+
+          opening.save(function (error, saved) {
+            if (saved) {
+              console.log('Changed to Active');
+            }
+          })
+
+          Opportunity.findOne({_id : opportunityId})
+          .exec(function (error, opportunity) {
+            if (opportunity) {
+              if (opportunity.closedOpenings.indexOf(id)>0) {
+                var index = opportunity.closedOpenings.indexOf(id);
+                opportunity.closedOpenings.splice(index,1);
+                opportunity.currOpenings.push(id);
+              }else{
+                helpers.errorHandler('No Such Opening Closed', req, res);
+              }
+
+              opportunity.save(function (error, saved) {
+                if (saved) {
+                  res.status(201).send('Opening reopened');
+                }
+              })
+            } else {
+              helpers.errorHandler('Opportunit Not Found', req, res);
+            }
+          })
+        } else {
+          helpers.errorHandler('Opening Not Found', req, res);
+        }
+      })
+    }
   }
 }

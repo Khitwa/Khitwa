@@ -19,40 +19,118 @@ module.exports = {
 		});
 	},
 
-	addOpening: function (req, res) {
+	addOpportunity : function (req, res) {
+
+		var token = req.headers['x-access-token'];
+		if (!token) {
+			helpers.errorHandler('No Token', req, res);
+		}else{
+			var organization = jwt.decode(token,'secret');
+			var organizer = organization.name;
+			var newOpp = new Opportunity({
+				title : req.body.title,
+				_organizer : organizer,
+				startDate : req.body.startDate,
+				endDate: req.body.endDate,
+				location : req.body.location,
+				causesArea : req.body.causesArea,
+				description : req.body.description,
+				skillsRequired : req.body.skillsRequired,
+				poster : req.body.poster,
+				currOpenings : req.body.currOpenings,
+				closedOppenings : req.body.closedOppenings,
+				status : req.body.status
+			});
+
+			newOpp.save(function (error, saved) {
+				if (saved) {
+					Organization.findOne({name : organizer})
+					.exec(function (error, org) {
+						if(org){
+							var id = saved._id;
+							org.currentOpportunities.push(id);
+							org.save(function (error, savedArray) {
+								if (savedArray) {
+									console.log(org.currentOpportunities)
+								}
+							})
+						}
+					})
+					res.status(201).send('Opportunity Created');
+				}
+			});
+		}
+	},
+
+	closeOpportunity : function (req, res) {
 
 		var token = req.headers['x-access-token'];
 		if (!token) {
 			helpers.errorHandler('No Token', req, res);
 		} else {
-
-			var opportunityId = req.params.id.toString();
-			var newOpening = new Opening({
-				title : req.body.title,
-				_opportunity : opportunityId,
-				numberOfVolunteers : req.body.numberOfVolunteers,
-				location : req.body.location,
-				description : req.body.description,
-				skillsRequired : req.body.skillsRequired,
-				resources : req.body.resources,
-				status : req.body.status
+			var organization = jwt.decode(token, 'secret');
+			var id = req.params.id;
+			Opportunity.findOne({_id : id})
+			.exec(function (error, found) {
+				if (found) {
+					found.status='Closed';
+					found.save(function (error, saved) {
+						if (saved) {
+							console.log('Changed to Closed');
+						}
+					})
+				}else{
+					helpers.errorHandler('Opportunity Not Found', req, res);
+				}
 			})
+			Organization.findOne({name : organization.name})
+			.exec(function (error, org) {
+			 	if (org) {
+					var index = org.currentOpportunities.indexOf(id.toString());
+					var toClose = org.currentOpportunities.splice(index,1);
+					org.pastOpportunities.push(toClose);
+					org.save(function (error, savedOrg) {
+						if (savedOrg) {
+							res.status(201).send('Opportunity Closed');
+						}
+					})
+				}
+			})
+		}
+	},
 
-			Opportunity.findOne({_id : opportunityId})
+	reopenOpportunity : function (req, res) {
+		
+		var token = req.headers['x-access-token'];
+		var id = req. params.id.toString();
+
+		if (!token) {
+			helpers.errorHandler('No Token', req, res);
+		} else {
+			Opportunity.findOne({_id : id})
 			.exec(function (error, opportunity) {
 				if (opportunity) {
-						newOpening.save(function (error, saved) {
-						if (saved) {
-
-							opportunity.currOpenings.push(saved._id);
-							opportunity.save(function (error, oppSaved) {
-								if (oppSaved) {
-									res.status(201).send('Opening Added');
+					opportunity.status='Active';
+					var org = jwt.decode(token, 'secret');
+					Organization.findOne({name : org.name})
+					.exec(function (error, organization) {
+						if (organization) {
+							var index = organization.pastOpportunities.indexOf(id);
+							organization.pastOpportunities.splice(index,1);
+							organization.currentOpportunities.push(id);
+							organization.save(function (error, saved) {
+								if (saved) {
+									console.log('Moved to open opportunity array');
 								}
 							})
 						}
 					})
-				}else{
+					opportunity.save(function (error,saved) {
+						if (saved) {
+							res.status(201).send('Opportunity Reopened');
+						}
+					})
+				} else {
 					helpers.errorHandler('Opportunity Not Found', req, res);
 				}
 			})
@@ -226,53 +304,6 @@ module.exports = {
 					}
 				}else{
 					helpers.errorHandler('Organization Not Found', req, res);
-				}
-			})
-		}
-	},
-
-	reopenOpening : function (req, res) {
-		var token = req.headers['x-access-token'];
-		var id = req.params.id.toString();
-
-		if (!token) {
-			helpers.errorHandler('No Token', req, res);
-		} else {
-
-			Opening.findOne({_id : id})
-			.exec(function (error, opening) {
-				if (opening) {
-					var opportunityId = opening._opportunity;
-					opening.status= 'Active';
-
-					opening.save(function (error, saved) {
-						if (saved) {
-							console.log('Changed to Active');
-						}
-					})
-
-					Opportunity.findOne({_id : opportunityId})
-					.exec(function (error, opportunity) {
-						if (opportunity) {
-							if (opportunity.closedOpenings.indexOf(id)>0) {
-								var index = opportunity.closedOpenings.indexOf(id);
-								opportunity.closedOpenings.splice(index,1);
-								opportunity.currOpenings.push(id);
-							}else{
-								helpers.errorHandler('No Such Opening Closed', req, res);
-							}
-
-							opportunity.save(function (error, saved) {
-								if (saved) {
-									res.status(201).send('Opening reopened');
-								}
-							})
-						} else {
-							helpers.errorHandler('Opportunit Not Found', req, res);
-						}
-					})
-				} else {
-					helpers.errorHandler('Opening Not Found', req, res);
 				}
 			})
 		}
