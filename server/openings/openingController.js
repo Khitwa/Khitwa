@@ -205,10 +205,9 @@ module.exports = {
 	        	if (user) {
 		        	Opening.findOne({ _id : id})
 		        	.exec(function (error, opening) {
-		            	if (error) {
-		            		helpers.errorHandler(error, req, res);
-		            	} else if (opening) {
-		            		if (opening.pendingApps.indexOf(user.username) === -1) {
+		        		if (opening) {
+		                	var index = opening.pendingApps.indexOf(user.username);
+		            		if (index === -1) {
 		                		opening.pendingApps.push(user.username);
 		                		opening.save(function (error, saved) {
 		                    		if (saved) {
@@ -216,7 +215,6 @@ module.exports = {
 		                    		}
 		                  		})
 		              		} else {
-		                		var index = opening.pendingApps.indexOf(user.username);
 		                		opening.pendingApps.splice(index,1);
 		                		opening.save(function (error, saved) {
 		                  			res.status(201).send('Application Cancelled');
@@ -237,7 +235,7 @@ module.exports = {
 
     	var token = req.headers['x-access-token'];
     	var openingId = req.params.id.toString();
-    	var applicantId = req.body.applicantId;
+    	var appName = req.body.appName;
 
     	if (!token) {
     		helpers.errorHandler('Please Sign In', req, res);
@@ -249,14 +247,16 @@ module.exports = {
           			Opening.findOne({ _id : openingId })
         			.exec(function (error, opening) {
             			if (opening) {
-							var index = opening.pendingApps.indexOf(applicantId);
-							opening.pendingApps.splice(index,1);
-							opening.volunteers.push(applicantId);
-							opening.save(function (error, saved) {
-                				if (saved) {
-                					res.status(201).send('User Approved');
-                				}
-              				})
+							var index = opening.pendingApps.indexOf(appName);
+            				if (index > -1) {        					
+								opening.pendingApps.splice(index,1);
+								opening.volunteers.push(appName);
+								opening.save(function (error, saved) {
+	                				if (saved) {
+	                					res.status(201).send('User Approved');
+	                				}
+	              				})
+            				}
             			} else {
             				helpers.errorHandler('Opening Not Found', req, res);
             			}
@@ -272,7 +272,7 @@ module.exports = {
 
     	var token = req.headers['x-access-token'];
     	var openingId = req.params.id.toString();
-    	var applicantId = req.body.applicantId;
+    	var appName = req.body.appName;
 
     	if (!token) {
     		helpers.errorHandler('Please Sign In', req, res);
@@ -284,10 +284,10 @@ module.exports = {
         			Opening.findOne({ _id : openingId })
         			.exec(function (error, opening) {
             			if (opening) {
-            				var index = opening.pendingApps.indexOf(applicantId);
-            				if (index>0) {
+            				var index = opening.pendingApps.indexOf(appName);
+            				if (index>-1) {
 				                opening.pendingApps.splice(index,1);
-				                opening.rejectedApps.push(applicantId);
+				                opening.rejectedApps.push(appName);
 				                opening.save(function (error, saved) {
                 					if (saved) {
                     					res.status(201).send('User Rejected');
@@ -332,32 +332,28 @@ module.exports = {
 	    	.exec(function (error, opening) {
 	        	if (opening) {
 	          		var opportunityId = opening._opportunity;
-	          		opening.status= 'Active';
-
+	          		opening.status = 'Active';
 	        		opening.save(function (error, saved) {
 	            		if (saved) {
-	            			console.log('Changed to Active');
-	            		}
-	        		})
-
-	        		Opportunity.findOne({_id : opportunityId})
-	        		.exec(function (error, opportunity) {
-	            		if (opportunity) {
-	            			if (opportunity.closedOpenings.indexOf(id)>0) {
-	                			var index = opportunity.closedOpenings.indexOf(id);
-	                			opportunity.closedOpenings.splice(index,1);
-	                			opportunity.currOpenings.push(id);
-	            			}else{
-	                			helpers.errorHandler('No Such Opening Closed', req, res);
-	            			}
-
-	            			opportunity.save(function (error, saved) {
-		                		if (saved) {
-		                			res.status(201).send('Opening reopened');
-		                		}
-	            			})
-	            		} else {
-	            			helpers.errorHandler('Opportunit Not Found', req, res);
+			        		Opportunity.findOne({_id : opportunityId})
+			        		.exec(function (error, opportunity) {
+			            		if (opportunity) {
+			                		var index = opportunity.closedOpenings.indexOf(id);
+			            			if (index > -1) {
+			                			opportunity.closedOpenings.splice(index,1);
+			                			opportunity.currOpenings.push(id);
+				            			opportunity.save(function (error, saved) {
+					                		if (saved) {
+					                			res.status(201).send('Opening reopened');
+					                		}
+				            			})
+			            			}else{
+			                			helpers.errorHandler('No Such Opening Closed', req, res);
+			            			}
+			            		} else {
+			            			helpers.errorHandler('Opportunit Not Found', req, res);
+			            		}
+			        		})
 	            		}
 	        		})
 	        	} else {
