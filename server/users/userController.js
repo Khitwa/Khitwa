@@ -1,28 +1,33 @@
 var Organization = require('../organizations/organizationModel.js');
 var User = require('./userModel.js');
-var jwt = require('jwt-simple');
+var jwt = require('jsonwebtoken');
 var helpers = require('../config/helpers.js');
 var Q = require('q');
 var crypto = require('crypto');
+var secret = 'what lies beneath the sea';
 
 module.exports = {
 
 	signin: function (req, res) {
 
-		var username = req.body.username.trim();
+		var username = req.body.username.trim().toLowerCase();
 
-		User.findOne({$or:[{username : username}, {email: username}]})
+		User.findOne({$or:[{username : username}, {email: username}]}).select('username email password active')
 		.exec(function (error, user){
 			if (user) {
 				if (user.active) {				
-					var password = req.body.password.trim();
-					User.comparePassword(password, user.password, res, function (found){
-						if (found) {
-							var token = jwt.encode(user, 'secret');
-							res.setHeader('x-access-token', token);
-							res.json({token : token, username: user.username});
-						}
-					});
+					if (req.body.password) {
+						var password = req.body.password.trim();
+						User.comparePassword(password, user.password, res, function (found){
+							if (found) {
+								var token = jwt.sign({ username : user.username, email: user.email, _id : user._id}, secret , {expiresIn : '4h'});
+								res.setHeader('x-access-token', token);
+								res.json({token : token});
+							}
+						});
+					} else {
+						helpers.errorHandler('Password Not Provided', req, res);
+					}
 				} else {
 					helpers.errorHandler('Please Activate Your Account', req, res);
 				}
@@ -34,11 +39,11 @@ module.exports = {
 
 	signup : function (req, res) {
 
-		var username = req.body.username.trim();
-		var email = req.body.email.trim();
-		var password = req.body.password.trim();
-		var firstName = req.body.firstName.trim();
-		var lastName = req.body.lastName.trim();
+		var username = req.body.username === undefined? '' : req.body.username.trim();
+		var email = req.body.email === undefined? '' : req.body.email.trim();
+		var password = req.body.password === undefined? '' : req.body.password.trim();
+		var firstName = req.body.firstName === undefined? '' : req.body.firstName.trim();
+		var lastName = req.body.lastName === undefined? '' : req.body.lastName.trim();
 
 		if (username == '' || password == '' || email == '' || firstName == '' || lastName == '') {
 			helpers.errorHandler('Required Feild Missing', req, res);
@@ -52,7 +57,7 @@ module.exports = {
 			user.dateOfBirth = req.body.dateOfBirth;
 			user.save(function (error, saved) {
 				if (saved) {
-					var encoded = jwt.encode(saved,'secret');
+					var encoded = jwt.sign({username : saved.username}, secret);
 					var body = helpers.activateTemplate(saved.firstName, saved.lastName, encoded);
 					helpers.email(saved.email, 'Account Activation', body, function () {
 						res.status(201).send('Please Check Your Email for Activation Link');
@@ -70,7 +75,7 @@ module.exports = {
 		if (!token) {
 			helpers.errorHandler('Please Sign In', req, res);
 		}else{
-			var user = jwt.decode(token,'secret');
+			var user = jwt.verify(token, secret);
 			User.findOne({username : user.username})
 			.exec(function (error, usr) {
 				if(usr && usr.active){
@@ -96,26 +101,10 @@ module.exports = {
 
 	getAll : function (req, res){
 
-		User.find({})
+		User.find({}).select('username firstName lastName email dateOfBirth gender phoneNumber skills causes rate picture')
 		.exec(function (error, users) {
 			if (users) {
-				var array = [];
-				for (var i = 0; i < users.length; i++) {
-					var obj={};
-					obj.username = users[i].username;
-					obj.firstName = users[i].firstName;
-					obj.lastName = users[i].lastName;
-					obj.email = users[i].email;
-					obj.dateOfBirth = users[i].dateOfBirth;
-					obj.gender = users[i].gender;
-					obj.phoneNumber = users[i].phoneNumber;
-					obj.skills = users[i].skills;
-					obj.causes = users[i].causes;
-					obj.rate = users[i].rate || 'N/A';
-					obj.picture = users[i].picture || 'http://i.imgur.com/FlEXhZo.jpg?1';
-					array.push(obj);
-				}
-				res.status(200).send(array);
+				res.status(200).send(users);
 			}else{
 				helpers.errorHandler(error, req, res);
 			}
@@ -129,7 +118,7 @@ module.exports = {
 		if (!token) {
 			helpers.errorHandler('Please Sign In', req, res);
 		}else{
-			var user = jwt.decode(token,'secret');
+			var user = jwt.verify(token, secret);
 
 			User.findOne({ username : user.username})
 			.exec(function (error, user){
@@ -231,7 +220,7 @@ module.exports = {
 		if (!token) {
 			helpers.errorHandler('Please Sign In', req, res);
 		} else {
-			var user = jwt.decode(token,'secret');
+			var user = jwt.verify(token, secret);
 			User.findOne({username: user.username})
 			.exec(function (error, user) {
 				User.comparePassword(password, user.password, res, function (found) {
@@ -258,7 +247,7 @@ module.exports = {
 		if (!token) {
 			helpers.errorHandler('Please Sign In', req, res);
 		} else {
-			var user = jwt.decode( token, 'secret');
+			var user = jwt.verify( token, secret);
 			User.findOne({ username : user.username})
 			.exec(function (error, usr) {
 				if (usr) {
@@ -300,7 +289,7 @@ module.exports = {
 
 	activate : function (req, res) {
 
-		var token = jwt.decode(req.params.token, 'secret') ;
+		var token = jwt.verify(req.params.token, secret) ;
 		
 		User.findOne({username : token.username})
 		.exec(function (error,user) {

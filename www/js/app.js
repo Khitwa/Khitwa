@@ -1,6 +1,7 @@
 var app = angular.module('Khitwa', [
     'ionic',
     'ionic-material',
+    'ngAnimate',
     'Khitwa.controllers', 
     'Khitwa.services',
     'ui.router'
@@ -45,6 +46,10 @@ app.config(function($stateProvider, $urlRouterProvider, $httpProvider) {
         url : '/forgotOrg',
         templateUrl : 'js/templates/forgotOrg.html',
         controller : 'OrganizationController'
+    })
+    .state('main',{
+        url : '/main',
+        templateUrl : 'js/templates/main.html'
     })
 
     $urlRouterProvider.otherwise('/');
