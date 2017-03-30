@@ -1,9 +1,16 @@
 angular.module('Khitwa.controllers', [])
 
-.controller('UserController', function($scope, User, $window, $location, $timeout) {
+.controller('UserController', function($scope, User, $window, $location, $timeout, $rootScope) {
 	$scope.loggedIn = $window.localStorage.getItem('com.khitwa')? true : false;
 	$scope.res = {};
+	$rootScope.$on('$stateChangeStart', function () {
+		// using stateChangeStart not $routeChangeStart because I use ui-router
+		$scope.loggedIn = $window.localStorage.getItem('com.khitwa')? true : false;
+		// if logged send info to backend and get user info here
+		// add user info to $scope
+	});
 	$scope.signin = function (data) {
+		$scope.res = {};
 		$scope.loading = true;
 		User.signin({username : data.username, password: data.password})
 		.then(function (resp) {
@@ -12,17 +19,18 @@ angular.module('Khitwa.controllers', [])
 				$scope.res.fail = resp.data;
 			} else {
 				$scope.loading = false;
-				$scope.res = {};
 				$window.localStorage.setItem('com.khitwa',resp.data.token);
 				$scope.res.success = '....Redirecting!';
 				$timeout(function () {
 					$location.path('/main');
-					$scope.loggedIn = $window.localStorage.getItem('com.khitwa')? true : false; 
-					$window.location.reload(true);
+					$scope.res = {};
 				},2000)
 			}
 		})
 	};
+	$scope.facebook = function () {
+		$window.location = $window.location.protocol + '//' + $window.location.host + '/auth/facebook';
+	}
 	$scope.goHome = function () {
 		$location.path('/');
 	}
@@ -32,9 +40,9 @@ angular.module('Khitwa.controllers', [])
 	$scope.signout = function () {
 		$window.localStorage.removeItem('com.khitwa');
 		$location.path('/');
-		$scope.loggedIn = $window.localStorage.getItem('com.khitwa')? true : false;
 	};
 	$scope.signup = function (regData) {
+		$scope.res = {};
 		$scope.loading = true; 
 		if (regData.password !== regData.confirm) {
 			$scope.loading = false;
@@ -47,10 +55,10 @@ angular.module('Khitwa.controllers', [])
 					$scope.res.fail = resp.data;
 				} else {
 					$scope.loading = false;
-					$scope.res = {};
 					$scope.res.success = resp.data + '....Redirecting!';
 					$timeout(function () {
 						$location.path('/main');
+						$scope.res = {};
 					},2000);
 				}
 			})
@@ -58,10 +66,15 @@ angular.module('Khitwa.controllers', [])
 	};
 })
 
-.controller('OrganizationController', function($scope, Organization, $window, $location, $timeout) {
+.controller('OrganizationController', function($scope, Organization, $window, $location, $timeout, $rootScope) {
 	$scope.loggedIn = $window.localStorage.getItem('com.khitwa')? true : false;
+	$rootScope.$on('$stateChangeStart', function () {
+		// using stateChangeStart not $routeChangeStart because I use ui-router
+		$scope.loggedIn = $window.localStorage.getItem('com.khitwa')? true : false;
+	})
 	$scope.res = {};
 	$scope.signin = function (data) {
+		$scope.res = {};
 		$scope.loading = true;
 		Organization.signin({username : data.username, password : data.password})
 		.then(function (resp) {
@@ -70,18 +83,17 @@ angular.module('Khitwa.controllers', [])
 				$scope.res.fail = resp.data;
 			} else {
 				$scope.loading = false;
-				$scope.res = {};
 				$window.localStorage.setItem('com.khitwa',resp.data.token);
 				$scope.res.success = '....Redirecting!';
 				$timeout(function () {
 					$location.path('/main');
-					$scope.loggedIn = $window.localStorage.getItem('com.khitwa')? true : false; 
-					$window.location.reload(true);
+					$scope.res = {};
 				}, 2000);
 			}
 		})
 	}
 	$scope.signup = function (regData) {
+		$scope.res = {};
 		$scope.loading = true; 
 		if (regData.password !== regData.confirm) {
 			$scope.loading = false;
@@ -94,10 +106,10 @@ angular.module('Khitwa.controllers', [])
 					$scope.res.fail = resp.data;
 				} else {
 					$scope.loading = false;
-					$scope.res = {};
 					$scope.res.success = resp.data + '....Redirecting!';
 					$timeout(function () {
 						$location.path('/main');
+						$scope.res = {};
 					},2000);
 				}
 			})
@@ -111,11 +123,8 @@ angular.module('Khitwa.controllers', [])
   //$scope.$on('$ionicView.enter', function(e) {
   //});
 })
-.controller('appCtrl', function($scope, $window, $location ){
-    $scope.loggedIn = $window.localStorage.getItem('com.khitwa')? true : false; 
-    $scope.logout = function () {
-        $window.localStorage.removeItem('com.khitwa');
-        $location.path('/');
-        $scope.loggedIn = $window.localStorage.getItem('com.khitwa')? true : false;
-    }
+
+.controller('FacebookCtrl', function ($stateParams, $location, $window) {
+	$window.localStorage.setItem('com.khitwa', $stateParams.token);
+	$location.path('/main')
 })
