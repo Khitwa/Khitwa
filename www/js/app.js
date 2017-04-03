@@ -63,6 +63,26 @@ app.config(function($stateProvider, $urlRouterProvider, $httpProvider) {
         controller : 'FacebookCtrl',
         controllerAs : 'Facebook'
     })
+    .state('pwdreset',{
+        url : '/user/reset/:token',
+        templateUrl : 'js/templates/reset.html',
+        controller: 'UserController',
+        controllerAs: 'User'
+    })
+    .state('pwdResetFail',{
+        url : '/reseterror',
+        templateUrl : 'js/templates/reseterror.html'
+    })
+    .state('pwdResetOrg',{
+        url : '/organization/reset/:token',
+        templateUrl : 'js/templates/resetOrg.html',
+        controller: 'OrganizationController',
+        controllerAs : 'Organization'
+    })
+    .state('activate', {
+        url : '/activate',
+        templateUrl : 'js/templates/activate.html'
+    })
 
     $urlRouterProvider.otherwise('/');
     $httpProvider.interceptors.push('AttachToken');
