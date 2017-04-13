@@ -39,7 +39,22 @@ app.config(function($stateProvider, $urlRouterProvider, $httpProvider) {
     .state('facebook',{
         url : '/facebook/:token',
         templateUrl : 'js/templates/main.html',
-        controller : 'FacebookCtrl as Facebook'
+        controller : 'SocialCtrl'
+    })
+    .state('twitter',{
+        url : '/twitter/:token',
+        templateUrl : 'js/templates/main.html',
+        controller : 'SocialCtrl'
+    })
+    .state('google', {
+        url : '/google/:token',
+        templateUrl : 'js/templates/main.html',
+        controller : 'SocialCtrl'
+    })
+    .state('SocialError', {
+        url : '/socialerror',
+        templateUrl : '/js/templates/login.html',
+        controller : 'SocialCtrl'
     })
     .state('pwdreset',{
         url : '/user/reset/:token',

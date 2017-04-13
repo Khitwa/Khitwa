@@ -1,4 +1,6 @@
 var FacebookStrategy = require('passport-facebook').Strategy;
+var TwitterStrategy  = require('passport-twitter').Strategy;
+var GoogleStrategy   = require('passport-google-oauth').OAuth2Strategy;
 var User             = require('../users/userModel');
 var session          = require('express-session');
 var crypto           = require('crypto');
@@ -31,8 +33,6 @@ module.exports = function (app, passport) {
 	    profileFields: ['id', 'email', 'first_name', 'verified','last_name']
 	},
 	function(accessToken, refreshToken, profile, done) {
-		// console.log(profile._json)
-		//find the user based off of the facebook profile id
 	    User.findOne({email: profile._json.email}).exec(function (error, user) {
 	    	if (user && user != null) {
 	    		//login
@@ -46,20 +46,95 @@ module.exports = function (app, passport) {
 	    			"email"    : profile._json.email,
 	    			"firstName": profile._json.first_name,
 	    			"lastName" : profile._json.last_name,
-	    			"active"   : profile._json.verified
-	    		})
+	    			"active"   : profile._json.verified,
+	    			"picture"  : 'http://graph.facebook.com/' + profile._json.id + '/picture?type=large&w‌​idth=480&height=480'
+	    		});
 	    		// save new user
 	    		user.save(function (error, saved) {
 	    			return done(null, saved);
 	    		});
 	    	}
 	    })
-	  }
-	));
+	}));
+
+	passport.use(new TwitterStrategy({
+	    consumerKey: API.TWITTER.CONSUMER_KEY,
+	    consumerSecret: API.TWITTER.CONSUMER_SECRET,
+	    callbackURL: API.TWITTER.LINK + '/auth/twitter/callback',
+	    userProfileURL : 'https://api.twitter.com/1.1/account/verify_credentials.json?include_email=true'
+	},
+	function(token, tokenSecret, profile, done) {
+	    User.findOne({email: profile.emails[0].value.toLowerCase()}).exec(function (error, user) {
+	    	if (user && user != null) {
+	    		//login
+	    		return done(null, user);
+	    	}else{
+	    		// create new user
+	    		var password = crypto.randomBytes(5).toString('hex');
+	    		var name = profile.displayName.split(" ");
+	    		var user = new User({
+	    			"username" : profile.id,
+	    			"password" : password,
+	    			"email"    : profile.emails[0].value,
+	    			"firstName": name[0],
+	    			"lastName" : name[1],
+	    			"active"   : true,
+	    			"picture"  : 'http://www.twitter.com/'+ profile.username + '/profile_image?size=original'
+	    		});
+	    		// save new user
+	    		user.save(function (error, saved) {
+	    			return done(null, saved);
+	    		});
+	    	}
+	    })
+	}));
+
+	passport.use(new GoogleStrategy({
+	    clientID: API.GOOGLE.CLIENTID,
+	    clientSecret: API.GOOGLE.CLIENTSECRET,
+	    callbackURL: API.GOOGLE.LINK + '/auth/google/callback'
+	},
+	function(accessToken, refreshToken, profile, done) {
+		console.log(profile);
+	    User.findOne({email: profile.emails[0].value.toLowerCase()}).exec(function (error, user) {
+	    	if (user && user != null) {
+	    		//login
+	    		return done(null, user);
+	    	}else{
+	    		// create new user
+	    		var password = crypto.randomBytes(5).toString('hex');
+	    		var name = profile.displayName.split(" ");
+	    		var picture = profile.photos[0].value;
+	    		var user = new User({
+	    			"username" : profile.id,
+	    			"password" : password,
+	    			"email"    : profile.emails[0].value,
+	    			"firstName": name[0],
+	    			"lastName" : name[1],
+	    			"active"   : true,
+	    			"picture"  : picture.substr(0, picture.length-2) + '480'
+	    		});
+	    		// save new user
+	    		user.save(function (error, saved) {
+	    			return done(null, saved);
+	    		});
+	    	}
+	    })
+	}));
+
+	// Facebook routes
 	app.get('/auth/facebook', passport.authenticate('facebook', { scope: 'email' }));
-	// app.get('/auth/facebook/callback', passport.authenticate('facebook', { successRedirect: '/#/main', failureRedirect: '/login' }))
-	app.get('/auth/facebook/callback', passport.authenticate('facebook', { failureRedirect: '/login' }), function (req, res) {
-		console.log('redirect to facebook')
+	app.get('/auth/facebook/callback', passport.authenticate('facebook', { failureRedirect: '/#/socialerror' }), function (req, res) {
 		res.redirect('/#/facebook/'+ token)
+	});
+	// Twitter Routes
+	app.get('/auth/twitter', passport.authenticate('twitter'));
+	app.get('/auth/twitter/callback', passport.authenticate('twitter', { failureRedirect: '/#/socialerror' }), function (req, res) {
+		res.redirect('/#/twitter/' + token)
+	});
+	// Google Plus Route
+	app.get('/auth/google', passport.authenticate('google', { scope: ['https://www.googleapis.com/auth/plus.login', 'profile', 'email'] }));
+	app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/#/socialerror' }), function(req, res) {
+	    res.redirect('/#/google/' + token);
 	});
 }
