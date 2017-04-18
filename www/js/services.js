@@ -119,9 +119,11 @@ angular.module('Khitwa.services', [])
             return error;
         })
     };
-    var validate = function (username, password, email) {
-        var message = '';
-        var valid = true;
+    var validate = function (username, password, email, confirm) {
+        var result = [];
+        var username = username === undefined? '' : username;
+        var password = password === undefined? '' : password;
+        var email    = email    === undefined? '' : email;
         var usr = username.toLowerCase();
         var pass = password.toLowerCase();
         var index = pass.indexOf(usr[0]);
@@ -129,24 +131,45 @@ angular.module('Khitwa.services', [])
         var count = 0 ;
         if (index > -1) {
             for (var i = index; i < usr.length; i++) {
-                if (pass[i] === usr[count]){
-                    same = true;
-                    count++;
-                }else{
-                    same = false;
-                }
+                if (pass[i] === usr[count]){same = true; count++;}else{ same = false; }
             }
         }
-        if (username.length < 3) return { message: 'Username Should be at Least 3 Characters Long!', valid: false };
-        if(!/[a-z]/.test(username)) return { message: 'Username Should Contain at Least One Character!', valid: false };
-        if(password.length < 6 || password.length > 48) return { message : 'Password must be 6 - 24 characters long.', valid: false };
-        if(same)return { message : 'Password Can Not Contain Username', valid : false };
-        if (email.indexOf('@')<0 || email.indexOf('.')<0) return { message: 'Please Enter Valid Email Address!', valid: false };
-        if(!/[a-z]/.test(password)) return { message: 'Password Should Contain at Least One Lowercase Character!', valid: false };
-        if(!/[A-Z]/.test(password)) return { message: 'Password Should Contain at Least One Uppercase Character!', valid: false };
-        if(!/[0-9]/.test(password)) return { message: 'Password Should Contain at Least One Number!', valid: false };
-        if(/^\w+_+$/.test(password)) return { message: 'Password Should Contain at Least One Special Character!', valid: false};
-        return { message : '', valid: true};
+        if(username.length < 3) result.push( { message: 'At Least 3 Characters Long!', type: 'username' } );
+        if(username.indexOf(' ')>-1) result.push( { message: 'No Spaces!', type: 'username'} );
+        if(!/[a-z]/.test(username)) result.push( { message: 'At Least One Letter!', type: 'username' } );
+        if(password.length < 6 || password.length > 48) result.push( { message : 'Must be 6 - 24 characters long.', type: 'password' } );
+        if (password !== confirm) result.push( { message : 'Password Does Not Match!', type : 'confirm' } );
+        if(same) result.push( { message : 'Can Not Contain Username', type : 'password' } );
+        if (email.indexOf('@')<0 || email.indexOf('.')<0) result.push( { message: 'Email Address Invalid', type: 'email' } );
+        if(!/[a-z]/.test(password)) result.push( { message: 'At Least One Lowercase Character!', type: 'password' } );
+        if(!/[A-Z]/.test(password)) result.push( { message: 'At Least One Uppercase Character!', type: 'password' } );
+        if(!/[0-9]/.test(password)) result.push( { message: 'At Least One Number!', type: 'password' } );
+        if(!/[!#@$%^&*()_+]/.test(password)) result.push( { message: 'At Least One Special Character!', type: 'password'} );
+        return result
+    };
+    var checkusername = function (data) {
+        return $http({
+            method : 'POST',
+            url : link + '/api/user/checkusername',
+            data : data
+        })
+        .then(function (resp) {
+            return resp;
+        }).catch(function (error) {
+            return error;
+        })
+    };
+    var checkemail = function (data) {
+        return $http({
+            method : 'POST',
+            url : link + '/api/user/checkemail',
+            data : data
+        })
+        .then(function (resp) {
+            return resp;
+        }).catch(function (error) {
+            return error;
+        })
     }
     return {
         signin : signin,
@@ -159,7 +182,9 @@ angular.module('Khitwa.services', [])
         rate : rate, 
         forgot : forgot,
         reset : reset,
-        validate : validate
+        validate : validate,
+        checkusername : checkusername, 
+        checkemail : checkemail
     };
 })
 .factory('Organization', function($http, $window, $location){
@@ -280,6 +305,30 @@ angular.module('Khitwa.services', [])
             return error;
         })
     };
+    var checkOrgUsername = function (data) {
+        return $http({
+            method : 'POST',
+            url : link + '/api/organization/checkusername',
+            data : data
+        })
+        .then(function (resp) {
+            return resp;
+        }).catch(function (error) {
+            return error;
+        })
+    };
+    var checkOrgEmail = function (data) {
+        return $http({
+            method : 'POST',
+            url : link + '/api/organization/checkemail',
+            data : data
+        })
+        .then(function (resp) {
+            return resp;
+        }).catch(function (error) {
+            return error;
+        })
+    };
     return {
         signin : signin,
         signup : signup,
@@ -290,7 +339,9 @@ angular.module('Khitwa.services', [])
         checkAuth : checkAuth,
         award : award,
         forgot: forgot,
-        reset : reset
+        reset : reset, 
+        checkOrgUsername : checkOrgUsername,
+        checkOrgEmail : checkOrgEmail
     }
 })
 .factory('Opportunity', function($http, $window, $location){

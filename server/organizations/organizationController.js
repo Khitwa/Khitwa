@@ -28,7 +28,7 @@ module.exports = {
 					var org = jwt.sign({username : saved.username}, secret);
 					var body = helpers.activateTemplate(saved.username, '', org, 'organization');
 					helpers.email(saved.email, 'Account Activation', body, function () {
-						res.status(201).send('Organization Created');
+						res.status(201).send('Please Check Your Email for Activation Link');
 					})
 				}
 			})
@@ -64,6 +64,29 @@ module.exports = {
 		})
 	},
 
+	checkusername : function (req, res) {
+		var username = req.body.username === undefined? '' : req.body.username.trim();
+		Organization.findOne({username : username}).select('username').exec(function (error, org) {
+			if (org) {
+				res.json({valid : false, message : 'Username Already Exsits!'});
+			}else{ 
+				res.json({valid : true, message : 'Username Available!'});
+			}
+		})
+	},
+
+	checkemail : function (req, res) {
+		var email = req.body.email === undefined? '' : req.body.email.trim();
+		Organization.findOne({ email : email }).select('email').exec(function (error, org) {
+			if (org) {
+				res.json({ valid : false, message : 'Email In Use!' });
+			} else {
+				res.json({ valid : true, message : 'Email is not In Use!'});
+			}
+		})
+	},
+
+	// This need to be Modified like in Users
 	checkAuth : function (req, res) {
 
 		var token = req.headers['x-access-token'];

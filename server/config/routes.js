@@ -19,6 +19,8 @@ module.exports = function(app, express){
 	app.post('/api/user/forgot', userController.forgotPwd);
 	app.get('/api/user/chck/:token', userController.chckToken);
 	app.post('/api/user/reset/:token', userController.pwdReset);
+	app.post('/api/user/checkusername', userController.checkUsername);
+	app.post('/api/user/checkemail', userController.checkEmail);
 
 	// Organization routes goes here
 	app.post('/api/organization/signup', organizationController.signup);
@@ -33,6 +35,8 @@ module.exports = function(app, express){
 	app.post('/api/organization/forgot', organizationController.forgotPwd);
 	app.get('/api/organization/chck/:token', organizationController.chckToken);
 	app.post('/api/organization/reset/:token', organizationController.pwdReset);
+	app.post('/api/organization/checkusername', organizationController.checkusername);
+	app.post('/api/organization/checkemail', organizationController.checkemail);
 
 	// Opportunities routes goes here
 	app.post('/api/opportunity/add', opportunityController.addOpportunity);

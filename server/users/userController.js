@@ -44,11 +44,12 @@ module.exports = {
 		var password = req.body.password === undefined? '' : req.body.password.trim();
 		var firstName = req.body.firstName === undefined? '' : req.body.firstName.trim();
 		var lastName = req.body.lastName === undefined? '' : req.body.lastName.trim();
+		var confirm = req.body.confirm === undefined? '' : req.body.confirm.trim();
 
 		if (username == '' || password == '' || email == '' || firstName == '' || lastName == '') {
-			helpers.errorHandler('Required Feild Missing', req, res);
+			helpers.errorHandler('Required Field Missing', req, res);
 		} else {
-			var valid = helpers.validate(username, password, email);
+			var valid = helpers.validate(username, password, email, confirm);
 			if (valid.valid) {			
 				var user = new User();
 				user.username = username;
@@ -217,6 +218,28 @@ module.exports = {
 				}
 			})
 		}
+	},
+
+	checkUsername : function (req, res) {
+		var username = req.body.username === undefined? '' : req.body.username.trim();
+		User.findOne({username : username}).select('username').exec(function (error, user) {
+			if (user) {
+				res.json({valid : false, message : 'Username Already Exsits!'});
+			}else{ 
+				res.json({valid : true, message : 'Username Available!'});
+			}
+		})
+	},
+
+	checkEmail : function (req, res) {
+		var email = req.body.email === undefined? '' : req.body.email.trim();
+		User.findOne({ email : email }).select('email').exec(function (error, user) {
+			if (user) {
+				res.json({ valid : false, message : 'Email In Use!' });
+			} else {
+				res.json({ valid : true, message : 'Email is not In Use!'});
+			}
+		})
 	},
 
 	deleteUser : function (req, res) {
